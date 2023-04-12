@@ -1,79 +1,37 @@
-import torch
-from transformers import T5ForConditionalGeneration, T5Tokenizer, Trainer, TrainingArguments
-from torch.utils.data import Dataset
-import json
-
-class QGDataset(Dataset):
-    def __init__(self, data, tokenizer, max_length=512):
-        self.data = data
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        item = self.data[idx]
-        context = item['context']
-        answer = item['answer']
-
-        # Input text: context + answer
-        input_text = f"generate question: context: {context} answer: {answer}"
-        target_text = item['question']
-
-        input_encoding = self.tokenizer(input_text, padding='max_length', truncation=True, max_length=self.max_length, return_tensors='pt')
-        target_encoding = self.tokenizer(target_text, padding='max_length', truncation=True, max_length=self.max_length, return_tensors='pt')
-
-        labels = target_encoding['input_ids']
-        labels[labels == self.tokenizer.pad_token_id] = -100 # CrossEntropyLoss ignores index -100
-
-        return {
-            'input_ids': input_encoding['input_ids'].flatten(),
-            'attention_mask': input_encoding['attention_mask'].flatten(),
-            'labels': labels.flatten()
-        }
-
+from transformers import pipeline
+from src.logger import logger
+from src.mlflow_utils import log_param, log_metric
 
 class TransformerQuestionGenerator:
-    def __init__(self, model_name='t5-small', data_path='data/sample.json', output_dir='output', epochs=1):
+    def __init__(self, model_name='t5-small', device=0):
         self.model_name = model_name
-        self.data_path = data_path
-        self.output_dir = output_dir
-        self.epochs = epochs
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.tokenizer = T5Tokenizer.from_pretrained(self.model_name)
-        self.model = T5ForConditionalGeneration.from_pretrained(self.model_name).to(self.device)
+        self.device = device  # 0 for GPU, -1 for CPU
 
-    def load_data(self):
-        with open(self.data_path, 'r') as f:
-            data = json.load(f)
-        return data
+        logger.info(f'Loading model {model_name} on device {device}')
+        self.question_generator = pipeline('question-generation', model=model_name, device=device)
+        logger.info('Model loaded successfully')
 
-    def train(self):
-        data = self.load_data()
-        train_dataset = QGDataset(data, self.tokenizer)
+    def generate_question(self, context, answer):
+        try:
+            input_text = f"context: {context} answer: {answer}"
+            log_param('input_text', input_text)
+            question = self.question_generator(input_text)[0]['question']
+            return question
+        except Exception as e:
+            logger.error(f'Error during question generation: {e}')
+            return None
 
-        training_args = TrainingArguments(
-            output_dir=self.output_dir,
-            per_device_train_batch_size=8,
-            num_train_epochs=self.epochs,
-            logging_dir='./logs',
-            save_strategy='epoch'
-        )
 
-        trainer = Trainer(
-            model=self.model,
-            args=training_args,
-            train_dataset=train_dataset,
-            tokenizer=self.tokenizer
-        )
+if __name__ == '__main__':
+    # Example usage
+    generator = TransformerQuestionGenerator()
+    context = "The cat sat on the mat."
+    answer = "mat"
+    question = generator.generate_question(context, answer)
 
-        trainer.train()
-
-    def generate_question(self, context, answer, max_length=64):
-        input_text = f"generate question: context: {context} answer: {answer}"
-        input_ids = self.tokenizer.encode(input_text, return_tensors='pt').to(self.device)
-
-        output = self.model.generate(input_ids, max_length=max_length)
-        question = self.tokenizer.decode(output[0], skip_special_tokens=True)
-        return question
+    if question:
+        print(f"Context: {context}")
+        print(f"Answer: {answer}")
+        print(f"Question: {question}")
+    else:
+        print("No question could be generated.")

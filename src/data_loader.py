@@ -1,46 +1,34 @@
 import json
+from src.logger import logger
+from src.mlflow_utils import log_param, log_metric
 
 class DataLoader:
-    """Loads and preprocesses data from a JSON file.
-
-    Attributes:
-        file_path (str): The path to the JSON file.
-    """
-
-    def __init__(self, file_path):
-        """Initializes the DataLoader with the given file path.
-
-        Args:
-            file_path (str): The path to the JSON file.
-        """
+    def __init__(self, file_path='data/sample.json'):
         self.file_path = file_path
+        self.data = self.load_data()
+        logger.info(f'Loaded data from {file_path}')
 
     def load_data(self):
-        """Loads data from the JSON file.
-
-        Returns:
-            list: A list of dictionaries, where each dictionary represents a data sample.
-        """
         try:
             with open(self.file_path, 'r') as f:
                 data = json.load(f)
             return data
         except FileNotFoundError:
-            print(f"Error: File not found at {self.file_path}")
+            logger.error(f'File not found: {self.file_path}')
             return []
         except json.JSONDecodeError:
-            print(f"Error: Invalid JSON format in {self.file_path}")
+            logger.error(f'Invalid JSON format in: {self.file_path}')
             return []
 
-    def preprocess_data(self, data):
-        """Preprocesses the loaded data.
+    def get_examples(self, num_examples=None):
+        if num_examples is None:
+            return self.data
+        else:
+            return self.data[:num_examples]
 
-        Args:
-            data (list): A list of dictionaries representing the data.
 
-        Returns:
-            list: A list of preprocessed dictionaries.
-        """
-        # Implement preprocessing logic here (e.g., tokenization, cleaning)
-        # This is a placeholder; replace with actual preprocessing steps
-        return data
+if __name__ == '__main__':
+    # Example usage
+    loader = DataLoader()
+    examples = loader.get_examples(num_examples=2)
+    print(examples)

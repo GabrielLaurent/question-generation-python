@@ -1,36 +1,53 @@
+import json
 import random
-from src.question_type_classifier import QuestionTypeClassifier
+from src.logger import logger
+import os
+from src.mlflow_utils import log_param, log_metric
 
 class RuleBasedQuestionGenerator:
-    def __init__(self, question_type_model_path='question_type_model.joblib'):
-        self.question_type_classifier = QuestionTypeClassifier(question_type_model_path)
-        try:
-            self.question_type_classifier.load()
-        except FileNotFoundError:
-            print("Question type classifier model not found. Make sure it is trained and saved.")
-            self.question_type_classifier = None
+    def __init__(self, rules_file='data/rules.json'):
+        self.rules = self.load_rules(rules_file)
+        logger.info(f'Loaded rules from {rules_file}')
+
+    def load_rules(self, rules_file):
+        with open(rules_file, 'r') as f:
+            rules = json.load(f)
+        return rules
 
     def generate_question(self, context, answer):
-        if self.question_type_classifier is None:
-            return "Question generation disabled until the question type classifier is available.", False
+        possible_rules = []
+        for rule_name, rule_data in self.rules.items():
+            if rule_data['answer_type'] == self.get_answer_type(answer):
+                possible_rules.append((rule_name, rule_data))
 
-        question_type = self.question_type_classifier.predict(context)
+        if not possible_rules:
+            return None  # No suitable rule found
 
-        if question_type == "Simple":
-            question = f"What about {answer}?"
-        elif question_type == "Complex":
-            question = f"Considering the context, how does {answer} relate?"
+        rule_name, rule_data = random.choice(possible_rules)
+
+        question = rule_data['template'].replace('ANS', answer)
+        question = question.replace('CTX', context)
+        log_param('used_rule', rule_name)
+        return question
+
+    def get_answer_type(self, answer):
+        # Basic answer type detection (can be extended)
+        if answer.isdigit():
+            return 'number'
         else:
-            question = f"Tell me more about {answer}."
-
-        return question, True
+            return 'text'
 
 
 if __name__ == '__main__':
-    # Example Usage
-    context = "The quick brown fox jumps over the lazy dog."
-    answer = "the quick brown fox"
-
+    # Example usage
     generator = RuleBasedQuestionGenerator()
-    question, success = generator.generate_question(context, answer)
-    print(f"Generated question: {question}, Success: {success}")
+    context = "The cat sat on the mat."
+    answer = "mat"
+    question = generator.generate_question(context, answer)
+
+    if question:
+        print(f"Context: {context}")
+        print(f"Answer: {answer}")
+        print(f"Question: {question}")
+    else:
+        print("No question could be generated.")
