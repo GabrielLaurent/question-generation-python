@@ -1,18 +1,27 @@
-from src.logger import setup_logger
-
-logger = setup_logger(__name__)
-
 class RuleBasedQuestionGenerator:
-    def __init__(self):
-        logger.info('Initializing RuleBasedQuestionGenerator')
+    """Generates questions using a rule-based approach.
 
-    def generate_question(self, context, answer):
-        logger.info(f'Generating question for context: {context[:50]}... and answer: {answer}') # Truncate context for logging
-        try:
-            # Simple rule-based question generation (replace with your logic)
-            question = f'What is the answer to this: {context}?'
-            logger.debug(f'Generated question: {question}') # Log generated question for debug
-            return question
-        except Exception as e:
-            logger.exception(f'An error occurred during question generation')
-            raise e
+    This class implements a set of rules to transform declarative sentences into questions.
+    """
+
+    def __init__(self):
+        """Initializes the RuleBasedQuestionGenerator.
+
+        Currently, no specific initialization is required.
+        """
+        pass
+
+    def generate_question(self, sentence):
+        """Generates a question from the given sentence.
+
+        Args:
+            sentence (str): The input sentence.
+
+        Returns:
+            str: The generated question.
+        """
+        # Implement rule-based question generation logic here
+        # This is a placeholder; replace with actual rules
+        if sentence.endswith('.'):
+          return "Is this a fact?"
+        return "What about this?"

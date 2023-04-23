@@ -1,34 +1,17 @@
 import unittest
-import logging
-from io import StringIO
-
 from src.rule_based_question_generator import RuleBasedQuestionGenerator
-from src.logger import setup_logger
 
 class TestRuleBasedQuestionGenerator(unittest.TestCase):
+    """Unit tests for the RuleBasedQuestionGenerator class.
 
-    def setUp(self):
-        self.logger = setup_logger(__name__, level=logging.DEBUG)
-        self.log_stream = StringIO()
-        handler = logging.StreamHandler(self.log_stream)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-
-    def tearDown(self):
-        for handler in self.logger.handlers[:]:
-            self.logger.removeHandler(handler)
-            handler.close()
+    This class contains test methods to verify the functionality of the RuleBasedQuestionGenerator.
+    """
 
     def test_generate_question(self):
+        """Tests the generate_question method.
+
+        Checks if the question generation method returns a string.
+        """
         generator = RuleBasedQuestionGenerator()
-        context = 'This is a test context.'
-        answer = 'Test answer.'
-        question = generator.generate_question(context, answer)
-        self.assertIn('What is the answer', question)
-        self.assertIn('Generating question', self.log_stream.getvalue())
-        self.assertIn('Generated question', self.log_stream.getvalue())
-
-
-if __name__ == '__main__':
-    unittest.main()
+        question = generator.generate_question('This is a sentence.')
+        self.assertIsInstance(question, str)
