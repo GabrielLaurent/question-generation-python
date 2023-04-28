@@ -1,6 +1,75 @@
-private_doc/
+# Python bytecode
+**/__pycache__/*
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.env
+venv/
+env/
+*/env/*
+*/venv/*
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+
+# Installer logs
+pip-log.txt
+pip-delete-this.txt
+spack-build.out
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+
+# sdist
+*.egg
+
+# Wheel
+*.whl
+
+# Thumbnails
+._*
+
+# Build artifacts
+build/
+dist/
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*.bak
+.vscode/
+
+# OS generated files
+.DS_Store
+thumbs.db
+
+# Data
+data/*
+!data/sample.json
+
+# Private Documents
+private_docs/*
 
 private_doc/*
-.DS_Store
-*.pyc
-__pycache__/
