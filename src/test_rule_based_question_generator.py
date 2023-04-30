@@ -1,24 +1,34 @@
 import unittest
+import logging
+from io import StringIO
+
 from src.rule_based_question_generator import RuleBasedQuestionGenerator
+from src.logger import setup_logger
 
 class TestRuleBasedQuestionGenerator(unittest.TestCase):
 
     def setUp(self):
-        self.generator = RuleBasedQuestionGenerator()
+        self.logger = setup_logger(__name__, level=logging.DEBUG)
+        self.log_stream = StringIO()
+        handler = logging.StreamHandler(self.log_stream)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+    def tearDown(self):
+        for handler in self.logger.handlers[:]:
+            self.logger.removeHandler(handler)
+            handler.close()
 
     def test_generate_question(self):
-        context = "The capital of France is Paris."
-        answer = "Paris"
-        question = self.generator.generate_question(context, answer)
-        self.assertEqual(question, "What is Paris?")
+        generator = RuleBasedQuestionGenerator()
+        context = 'This is a test context.'
+        answer = 'Test answer.'
+        question = generator.generate_question(context, answer)
+        self.assertIn('What is the answer', question)
+        self.assertIn('Generating question', self.log_stream.getvalue())
+        self.assertIn('Generated question', self.log_stream.getvalue())
 
-    def test_generate_questions_for_example(self):
-        context = "The sky is blue and the grass is green."
-        answers = ["blue", "green"]
-        questions = self.generator.generate_questions_for_example(context, answers)
-        self.assertEqual(len(questions), 2)
-        self.assertEqual(questions[0], "What is blue?")
-        self.assertEqual(questions[1], "What is green?")
 
 if __name__ == '__main__':
     unittest.main()

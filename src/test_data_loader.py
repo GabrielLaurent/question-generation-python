@@ -1,51 +1,57 @@
 import unittest
-import json
 import os
-from src.data_loader import load_data
+import json
+from unittest.mock import patch
+import logging
+from io import StringIO
+
+from src.data_loader import DataLoader
+from src.logger import setup_logger
+
 
 class TestDataLoader(unittest.TestCase):
 
     def setUp(self):
-        # Create a sample data file for testing
-        self.sample_data = [
-            {
-                "context": "This is a sample context.",
-                "question": "What is this?",
-                "answer": "A sample."
-            },
-            {
-                "context": "Another sample context here.",
-                "question": "What about this one?",
-                "answer": "Another sample."
-            }
-        ]
-        self.sample_file_path = "sample_data.json"
-        with open(self.sample_file_path, 'w') as f:
-            json.dump(self.sample_data, f)
+        self.test_file = 'test_data.json'
+        self.logger = setup_logger(__name__, level=logging.DEBUG) # Setting level to DEBUG
+        self.log_stream = StringIO()
+        handler = logging.StreamHandler(self.log_stream)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+        with open(self.test_file, 'w') as f:
+            json.dump([{"context": "test context", "answer": "test answer"}], f)
 
     def tearDown(self):
-        # Clean up the sample data file after testing
-        os.remove(self.sample_file_path)
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+        for handler in self.logger.handlers[:]:
+            self.logger.removeHandler(handler)
+            handler.close()
 
-    def test_load_data_type(self):
-        data = load_data(self.sample_file_path)
-        self.assertIsInstance(data, list)
+    def test_load_data_success(self):
+        data_loader = DataLoader(self.test_file)
+        data = data_loader.load_data()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['context'], 'test context')
+        self.assertIn('Successfully loaded data', self.log_stream.getvalue())
 
-    def test_load_data_shape(self):
-        data = load_data(self.sample_file_path)
-        self.assertEqual(len(data), len(self.sample_data))
+    def test_load_data_file_not_found(self):
+        with self.assertRaises(FileNotFoundError):
+            data_loader = DataLoader('non_existent_file.json')
+            data_loader.load_data()
+        self.assertIn('File not found', self.log_stream.getvalue())
 
-    def test_load_data_content(self):
-        data = load_data(self.sample_file_path)
-        self.assertEqual(data, self.sample_data)
+    def test_load_data_json_decode_error(self):
+        with open(self.test_file, 'w') as f:
+            f.write('invalid json')
+        
+        data_loader = DataLoader(self.test_file)
+        with self.assertRaises(json.JSONDecodeError):
+            data_loader.load_data()
 
-    def test_load_data_empty_file(self):
-        empty_file_path = "empty_data.json"
-        open(empty_file_path, 'w').close()
-        data = load_data(empty_file_path)
-        self.assertEqual(data, [])
-        os.remove(empty_file_path)
-
+        self.assertIn('Error decoding JSON', self.log_stream.getvalue())
 
 if __name__ == '__main__':
     unittest.main()

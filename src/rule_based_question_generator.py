@@ -1,37 +1,18 @@
-import spacy
-import random
+from src.logger import setup_logger
 
-
-nlp = spacy.load('en_core_web_sm')
-
+logger = setup_logger(__name__)
 
 class RuleBasedQuestionGenerator:
     def __init__(self):
-        pass  # Initialize any necessary resources here
+        logger.info('Initializing RuleBasedQuestionGenerator')
 
     def generate_question(self, context, answer):
-        """Generates a question based on the given context and answer using rule-based techniques."""
-        doc = nlp(context)
-        answer_doc = nlp(answer)
-
-        # Simple rule: What is the answer?
-        question = f"What is {answer}?"
-        return question
-
-    def generate_questions_for_example(self, context, answers):
-        """Generates a list of questions for a single context and list of potential answers."""
-        questions = []
-        for answer in answers:
-            question = self.generate_question(context, answer)
-            questions.append(question)
-        return questions
-
-
-if __name__ == '__main__':
-    # Example Usage
-    generator = RuleBasedQuestionGenerator()
-    context = "The cat sat on the mat."
-    answers = ["cat", "mat"]
-    questions = generator.generate_questions_for_example(context, answers)
-    for question in questions:
-        print(question)
+        logger.info(f'Generating question for context: {context[:50]}... and answer: {answer}') # Truncate context for logging
+        try:
+            # Simple rule-based question generation (replace with your logic)
+            question = f'What is the answer to this: {context}?'
+            logger.debug(f'Generated question: {question}') # Log generated question for debug
+            return question
+        except Exception as e:
+            logger.exception(f'An error occurred during question generation')
+            raise e

@@ -1,40 +1,25 @@
 import json
+from src.logger import setup_logger
 
+logger = setup_logger(__name__)
 
 class DataLoader:
-    def __init__(self, data_path):
-        self.data_path = data_path
+    def __init__(self, file_path):
+        self.file_path = file_path
+        logger.info(f'Initializing DataLoader with file: {file_path}')
 
     def load_data(self):
-        """Loads the entire dataset into memory."""
-        with open(self.data_path, 'r') as f:
-            data = json.load(f)
-        return data
-
-    def get_examples(self):
-        """A generator that yields examples one at a time to avoid loading the entire dataset into memory."""
-        with open(self.data_path, 'r') as f:
-            data = json.load(f)
-            for article in data['data']:
-                for paragraph in article['paragraphs']:
-                    context = paragraph['context']
-                    for qa in paragraph['qas']:
-                        question = qa['question']
-                        answers = [ans['text'] for ans in qa['answers']]
-                        yield {
-                            'context': context,
-                            'question': question,
-                            'answers': answers
-                        }
-
-
-if __name__ == '__main__':
-    # Example usage
-    data_loader = DataLoader('data/sample.json')
-
-    # Using the get_examples generator
-    for example in data_loader.get_examples():
-        print(f"Context: {example['context'][:50]}...")  # Print only the first 50 characters
-        print(f"Question: {example['question']}")
-        print(f"Answers: {example['answers']}")
-        break  # Only process the first example
+        try:
+            with open(self.file_path, 'r') as f:
+                data = json.load(f)
+            logger.info(f'Successfully loaded data from {self.file_path}')
+            return data
+        except FileNotFoundError as e:
+            logger.error(f'File not found: {self.file_path}', exc_info=True)
+            raise e
+        except json.JSONDecodeError as e:
+            logger.error(f'Error decoding JSON from {self.file_path}', exc_info=True)
+            raise e
+        except Exception as e:
+            logger.exception(f'An unexpected error occurred during data loading')
+            raise e
