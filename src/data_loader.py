@@ -1,21 +1,40 @@
 import json
 
-def load_data(file_path):
-    """Loads data from a JSON file.
 
-    Args:
-        file_path (str): The path to the JSON file.
+class DataLoader:
+    def __init__(self, data_path):
+        self.data_path = data_path
 
-    Returns:
-        list: A list of dictionaries, where each dictionary represents a data entry.
-    """
-    try:
-        with open(file_path, 'r') as f:
+    def load_data(self):
+        """Loads the entire dataset into memory."""
+        with open(self.data_path, 'r') as f:
             data = json.load(f)
         return data
-    except FileNotFoundError:
-        print(f"Error: File not found at {file_path}")
-        return []  # Or raise the exception, depending on desired behavior
-    except json.JSONDecodeError:
-        print(f"Error: Invalid JSON format in {file_path}")
-        return [] # Or raise the exception, depending on desired behavior
+
+    def get_examples(self):
+        """A generator that yields examples one at a time to avoid loading the entire dataset into memory."""
+        with open(self.data_path, 'r') as f:
+            data = json.load(f)
+            for article in data['data']:
+                for paragraph in article['paragraphs']:
+                    context = paragraph['context']
+                    for qa in paragraph['qas']:
+                        question = qa['question']
+                        answers = [ans['text'] for ans in qa['answers']]
+                        yield {
+                            'context': context,
+                            'question': question,
+                            'answers': answers
+                        }
+
+
+if __name__ == '__main__':
+    # Example usage
+    data_loader = DataLoader('data/sample.json')
+
+    # Using the get_examples generator
+    for example in data_loader.get_examples():
+        print(f"Context: {example['context'][:50]}...")  # Print only the first 50 characters
+        print(f"Question: {example['question']}")
+        print(f"Answers: {example['answers']}")
+        break  # Only process the first example

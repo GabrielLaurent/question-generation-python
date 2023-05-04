@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "title": "Sample Article",
+      "paragraphs": [
+        {
+          "context": "The cat sat on the mat. It was a sunny day.",
+          "qas": [
+            {
+              "question": "Where did the cat sit?",
+              "answers": [
+                {
+                  "text": "on the mat",
+                  "answer_start": 12
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
